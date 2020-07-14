@@ -1,0 +1,120 @@
+/*
+ *  ADS1015 iio overlay
+ *  03/07/2020  Pawel Hryniszak
+ *  dtc -@ -Hepapr -I dts -O dtb -o ads1015.dtbo ads1015-overlay.dts
+ *
+ * gain
+ * 0	6.144V
+ * 1	4.096V
+ * 2	2.048V (default)
+ * 3	1.024V
+ * 4	0.512V
+ * 5	0.256V
+ * 6	0.256V
+ * 7	0.256V
+ *
+ * datarate	[samples per second]
+ * 0	128
+ * 1	250
+ * 2	490
+ * 3	920
+ * 4	1600 (default)
+ * 5	2400
+ * 6	3300
+ * 7	3300
+ *
+ */
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target = <&i2c_arm>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+            ads1015: ads1015 {
+                compatible = "ti,ads1015";
+                status = "okay";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                reg = <0x48>;
+                interrupt-parent = <&gpio>;
+                interrupts = <4 1>;      
+
+				adc_ch0: channel@0 {
+					reg = <0>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch1: channel@1 {
+					reg = <1>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch2: channel@2 {
+					reg = <2>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch3: channel@3 {
+					reg = <3>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch4: channel@4 {
+					reg = <4>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch5: channel@5 {
+					reg = <5>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};
+
+				adc_ch6: channel@6 {
+					reg = <6>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};                                       
+
+				adc_ch7: channel@7 {
+					reg = <7>;
+					ti,gain = <2>;
+					ti,datarate = <6>;
+				};                                       
+            };
+        };
+    };
+
+	__overrides__ {
+		addr =            <&ads1015>,"reg:0";
+		interrupt =       <&ads1015>,"interrupts:0";
+		ch0_gain =        <&adc_ch0>,"ti,gain:0";
+		ch0_datarate =    <&adc_ch0>,"ti,datarate:0";        
+		ch1_gain =        <&adc_ch1>,"ti,gain:0";
+		ch1_datarate =    <&adc_ch1>,"ti,datarate:0";        
+		ch2_gain =        <&adc_ch2>,"ti,gain:0";
+		ch2_datarate =    <&adc_ch2>,"ti,datarate:0";        
+		ch3_gain =        <&adc_ch3>,"ti,gain:0";
+		ch3_datarate =    <&adc_ch3>,"ti,datarate:0";        
+		ch4_gain =        <&adc_ch4>,"ti,gain:0";
+		ch4_datarate =    <&adc_ch4>,"ti,datarate:0";        
+		ch5_gain =        <&adc_ch5>,"ti,gain:0";
+		ch5_datarate =    <&adc_ch5>,"ti,datarate:0";        
+		ch6_gain =        <&adc_ch6>,"ti,gain:0";
+		ch6_datarate =    <&adc_ch6>,"ti,datarate:0";        
+		ch7_gain =        <&adc_ch7>,"ti,gain:0";
+		ch7_datarate =    <&adc_ch7>,"ti,datarate:0";        
+	};
+};
