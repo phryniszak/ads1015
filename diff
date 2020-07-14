@@ -1,0 +1,1251 @@
+26d25
+< #include <linux/interrupt.h>
+32a32
+> #include <linux/iio/events.h>
+34c34,35
+< #include <linux/iio/kfifo_buf.h>
+---
+> #include <linux/iio/triggered_buffer.h>
+> #include <linux/iio/trigger_consumer.h>
+37d37
+< #define ADS1015_IRQ_NAME "ads1015_rdy"
+39,60c39,60
+< #define ADS1015_CONV_REG 0x00
+< #define ADS1015_CFG_REG 0x01
+< #define ADS1015_LO_THRESH_REG 0x02
+< #define ADS1015_HI_THRESH_REG 0x03
+< 
+< #define ADS1015_CFG_COMP_QUE_SHIFT 0
+< #define ADS1015_CFG_COMP_LAT_SHIFT 2
+< #define ADS1015_CFG_COMP_POL_SHIFT 3
+< #define ADS1015_CFG_COMP_MODE_SHIFT 4
+< #define ADS1015_CFG_DR_SHIFT 5
+< #define ADS1015_CFG_MOD_SHIFT 8
+< #define ADS1015_CFG_PGA_SHIFT 9
+< #define ADS1015_CFG_MUX_SHIFT 12
+< 
+< #define ADS1015_CFG_COMP_QUE_MASK GENMASK(1, 0)
+< #define ADS1015_CFG_COMP_LAT_MASK BIT(2)
+< #define ADS1015_CFG_COMP_POL_MASK BIT(3)
+< #define ADS1015_CFG_COMP_MODE_MASK BIT(4)
+< #define ADS1015_CFG_DR_MASK GENMASK(7, 5)
+< #define ADS1015_CFG_MOD_MASK BIT(8)
+< #define ADS1015_CFG_PGA_MASK GENMASK(11, 9)
+< #define ADS1015_CFG_MUX_MASK GENMASK(14, 12)
+---
+> #define ADS1015_CONV_REG	0x00
+> #define ADS1015_CFG_REG		0x01
+> #define ADS1015_LO_THRESH_REG	0x02
+> #define ADS1015_HI_THRESH_REG	0x03
+> 
+> #define ADS1015_CFG_COMP_QUE_SHIFT	0
+> #define ADS1015_CFG_COMP_LAT_SHIFT	2
+> #define ADS1015_CFG_COMP_POL_SHIFT	3
+> #define ADS1015_CFG_COMP_MODE_SHIFT	4
+> #define ADS1015_CFG_DR_SHIFT	5
+> #define ADS1015_CFG_MOD_SHIFT	8
+> #define ADS1015_CFG_PGA_SHIFT	9
+> #define ADS1015_CFG_MUX_SHIFT	12
+> 
+> #define ADS1015_CFG_COMP_QUE_MASK	GENMASK(1, 0)
+> #define ADS1015_CFG_COMP_LAT_MASK	BIT(2)
+> #define ADS1015_CFG_COMP_POL_MASK	BIT(3)
+> #define ADS1015_CFG_COMP_MODE_MASK	BIT(4)
+> #define ADS1015_CFG_DR_MASK	GENMASK(7, 5)
+> #define ADS1015_CFG_MOD_MASK	BIT(8)
+> #define ADS1015_CFG_PGA_MASK	GENMASK(11, 9)
+> #define ADS1015_CFG_MUX_MASK	GENMASK(14, 12)
+63c63
+< #define ADS1015_CFG_COMP_DISABLE 3
+---
+> #define ADS1015_CFG_COMP_DISABLE	3
+66,67c66,67
+< #define ADS1015_CFG_COMP_POL_LOW 0
+< #define ADS1015_CFG_COMP_POL_HIGH 1
+---
+> #define ADS1015_CFG_COMP_POL_LOW	0
+> #define ADS1015_CFG_COMP_POL_HIGH	1
+70,71c70,71
+< #define ADS1015_CFG_COMP_MODE_TRAD 0
+< #define ADS1015_CFG_COMP_MODE_WINDOW 1
+---
+> #define ADS1015_CFG_COMP_MODE_TRAD	0
+> #define ADS1015_CFG_COMP_MODE_WINDOW	1
+74,75c74,75
+< #define ADS1015_CONTINUOUS 0
+< #define ADS1015_SINGLESHOT 1
+---
+> #define ADS1015_CONTINUOUS	0
+> #define ADS1015_SINGLESHOT	1
+77,80c77,80
+< #define ADS1015_SLEEP_DELAY_MS 2000
+< #define ADS1015_DEFAULT_PGA 2
+< #define ADS1015_DEFAULT_DATA_RATE 4
+< #define ADS1015_DEFAULT_CHAN 0
+---
+> #define ADS1015_SLEEP_DELAY_MS		2000
+> #define ADS1015_DEFAULT_PGA		2
+> #define ADS1015_DEFAULT_DATA_RATE	4
+> #define ADS1015_DEFAULT_CHAN		0
+82,83c82
+< enum chip_ids
+< {
+---
+> enum chip_ids {
+88,89c87
+< enum ads1015_channels
+< {
+---
+> enum ads1015_channels {
+102c100,101
+< 	128, 250, 490, 920, 1600, 2400, 3300, 3300};
+---
+> 	128, 250, 490, 920, 1600, 2400, 3300, 3300
+> };
+105c104,105
+< 	8, 16, 32, 64, 128, 250, 475, 860};
+---
+> 	8, 16, 32, 64, 128, 250, 475, 860
+> };
+112c112,113
+< 	6144, 4096, 2048, 1024, 512, 256, 256, 256};
+---
+> 	6144, 4096, 2048, 1024, 512, 256, 256, 256
+> };
+114,194c115,119
+< #define ADS1015_V_CHAN(_chan, _addr)                        \
+< 	{                                                       \
+< 		.type = IIO_VOLTAGE,                                \
+< 		.indexed = 1,                                       \
+< 		.address = _addr,                                   \
+< 		.channel = _chan,                                   \
+< 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |      \
+< 							  BIT(IIO_CHAN_INFO_SCALE) |    \
+< 							  BIT(IIO_CHAN_INFO_SAMP_FREQ), \
+< 		.scan_index = _addr,                                \
+< 		.scan_type = {                                      \
+< 			.sign = 's',                                    \
+< 			.realbits = 12,                                 \
+< 			.storagebits = 16,                              \
+< 			.shift = 4,                                     \
+< 			.endianness = IIO_CPU,                          \
+< 		},                                                  \
+< 		.datasheet_name = "AIN" #_chan,                     \
+< 	}
+< 
+< #define ADS1015_V_DIFF_CHAN(_chan, _chan2, _addr)           \
+< 	{                                                       \
+< 		.type = IIO_VOLTAGE,                                \
+< 		.differential = 1,                                  \
+< 		.indexed = 1,                                       \
+< 		.address = _addr,                                   \
+< 		.channel = _chan,                                   \
+< 		.channel2 = _chan2,                                 \
+< 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |      \
+< 							  BIT(IIO_CHAN_INFO_SCALE) |    \
+< 							  BIT(IIO_CHAN_INFO_SAMP_FREQ), \
+< 		.scan_index = _addr,                                \
+< 		.scan_type = {                                      \
+< 			.sign = 's',                                    \
+< 			.realbits = 12,                                 \
+< 			.storagebits = 16,                              \
+< 			.shift = 4,                                     \
+< 			.endianness = IIO_CPU,                          \
+< 		},                                                  \
+< 		.datasheet_name = "AIN" #_chan "-AIN" #_chan2,      \
+< 	}
+< 
+< #define ADS1115_V_CHAN(_chan, _addr)                        \
+< 	{                                                       \
+< 		.type = IIO_VOLTAGE,                                \
+< 		.indexed = 1,                                       \
+< 		.address = _addr,                                   \
+< 		.channel = _chan,                                   \
+< 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |      \
+< 							  BIT(IIO_CHAN_INFO_SCALE) |    \
+< 							  BIT(IIO_CHAN_INFO_SAMP_FREQ), \
+< 		.scan_index = _addr,                                \
+< 		.scan_type = {                                      \
+< 			.sign = 's',                                    \
+< 			.realbits = 16,                                 \
+< 			.storagebits = 16,                              \
+< 			.endianness = IIO_CPU,                          \
+< 		},                                                  \
+< 		.datasheet_name = "AIN" #_chan,                     \
+< 	}
+< 
+< #define ADS1115_V_DIFF_CHAN(_chan, _chan2, _addr)           \
+< 	{                                                       \
+< 		.type = IIO_VOLTAGE,                                \
+< 		.differential = 1,                                  \
+< 		.indexed = 1,                                       \
+< 		.address = _addr,                                   \
+< 		.channel = _chan,                                   \
+< 		.channel2 = _chan2,                                 \
+< 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |      \
+< 							  BIT(IIO_CHAN_INFO_SCALE) |    \
+< 							  BIT(IIO_CHAN_INFO_SAMP_FREQ), \
+< 		.scan_index = _addr,                                \
+< 		.scan_type = {                                      \
+< 			.sign = 's',                                    \
+< 			.realbits = 16,                                 \
+< 			.storagebits = 16,                              \
+< 			.endianness = IIO_CPU,                          \
+< 		},                                                  \
+< 		.datasheet_name = "AIN" #_chan "-AIN" #_chan2,      \
+< 	}
+---
+> /*
+>  * Translation from COMP_QUE field value to the number of successive readings
+>  * exceed the threshold values before an interrupt is generated
+>  */
+> static const int ads1015_comp_queue[] = { 1, 2, 4 };
+196,200c121,231
+< struct ads1015_data
+< {
+< 	/* Underlying I2C / SPI bus adapter used to abstract
+< 	 * slave register accesses
+< 	 */
+---
+> static const struct iio_event_spec ads1015_events[] = {
+> 	{
+> 		.type = IIO_EV_TYPE_THRESH,
+> 		.dir = IIO_EV_DIR_RISING,
+> 		.mask_separate = BIT(IIO_EV_INFO_VALUE) |
+> 				BIT(IIO_EV_INFO_ENABLE),
+> 	}, {
+> 		.type = IIO_EV_TYPE_THRESH,
+> 		.dir = IIO_EV_DIR_FALLING,
+> 		.mask_separate = BIT(IIO_EV_INFO_VALUE),
+> 	}, {
+> 		.type = IIO_EV_TYPE_THRESH,
+> 		.dir = IIO_EV_DIR_EITHER,
+> 		.mask_separate = BIT(IIO_EV_INFO_ENABLE) |
+> 				BIT(IIO_EV_INFO_PERIOD),
+> 	},
+> };
+> 
+> #define ADS1015_V_CHAN(_chan, _addr) {				\
+> 	.type = IIO_VOLTAGE,					\
+> 	.indexed = 1,						\
+> 	.address = _addr,					\
+> 	.channel = _chan,					\
+> 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |		\
+> 				BIT(IIO_CHAN_INFO_SCALE) |	\
+> 				BIT(IIO_CHAN_INFO_SAMP_FREQ),	\
+> 	.scan_index = _addr,					\
+> 	.scan_type = {						\
+> 		.sign = 's',					\
+> 		.realbits = 12,					\
+> 		.storagebits = 16,				\
+> 		.shift = 4,					\
+> 		.endianness = IIO_CPU,				\
+> 	},							\
+> 	.event_spec = ads1015_events,				\
+> 	.num_event_specs = ARRAY_SIZE(ads1015_events),		\
+> 	.datasheet_name = "AIN"#_chan,				\
+> }
+> 
+> #define ADS1015_V_DIFF_CHAN(_chan, _chan2, _addr) {		\
+> 	.type = IIO_VOLTAGE,					\
+> 	.differential = 1,					\
+> 	.indexed = 1,						\
+> 	.address = _addr,					\
+> 	.channel = _chan,					\
+> 	.channel2 = _chan2,					\
+> 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |		\
+> 				BIT(IIO_CHAN_INFO_SCALE) |	\
+> 				BIT(IIO_CHAN_INFO_SAMP_FREQ),	\
+> 	.scan_index = _addr,					\
+> 	.scan_type = {						\
+> 		.sign = 's',					\
+> 		.realbits = 12,					\
+> 		.storagebits = 16,				\
+> 		.shift = 4,					\
+> 		.endianness = IIO_CPU,				\
+> 	},							\
+> 	.event_spec = ads1015_events,				\
+> 	.num_event_specs = ARRAY_SIZE(ads1015_events),		\
+> 	.datasheet_name = "AIN"#_chan"-AIN"#_chan2,		\
+> }
+> 
+> #define ADS1115_V_CHAN(_chan, _addr) {				\
+> 	.type = IIO_VOLTAGE,					\
+> 	.indexed = 1,						\
+> 	.address = _addr,					\
+> 	.channel = _chan,					\
+> 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |		\
+> 				BIT(IIO_CHAN_INFO_SCALE) |	\
+> 				BIT(IIO_CHAN_INFO_SAMP_FREQ),	\
+> 	.scan_index = _addr,					\
+> 	.scan_type = {						\
+> 		.sign = 's',					\
+> 		.realbits = 16,					\
+> 		.storagebits = 16,				\
+> 		.endianness = IIO_CPU,				\
+> 	},							\
+> 	.event_spec = ads1015_events,				\
+> 	.num_event_specs = ARRAY_SIZE(ads1015_events),		\
+> 	.datasheet_name = "AIN"#_chan,				\
+> }
+> 
+> #define ADS1115_V_DIFF_CHAN(_chan, _chan2, _addr) {		\
+> 	.type = IIO_VOLTAGE,					\
+> 	.differential = 1,					\
+> 	.indexed = 1,						\
+> 	.address = _addr,					\
+> 	.channel = _chan,					\
+> 	.channel2 = _chan2,					\
+> 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |		\
+> 				BIT(IIO_CHAN_INFO_SCALE) |	\
+> 				BIT(IIO_CHAN_INFO_SAMP_FREQ),	\
+> 	.scan_index = _addr,					\
+> 	.scan_type = {						\
+> 		.sign = 's',					\
+> 		.realbits = 16,					\
+> 		.storagebits = 16,				\
+> 		.endianness = IIO_CPU,				\
+> 	},							\
+> 	.event_spec = ads1015_events,				\
+> 	.num_event_specs = ARRAY_SIZE(ads1015_events),		\
+> 	.datasheet_name = "AIN"#_chan"-AIN"#_chan2,		\
+> }
+> 
+> struct ads1015_thresh_data {
+> 	unsigned int comp_queue;
+> 	int high_thresh;
+> 	int low_thresh;
+> };
+> 
+> struct ads1015_data {
+209c240,242
+< 	unsigned int *data_rate;
+---
+> 	unsigned int event_channel;
+> 	unsigned int comp_mode;
+> 	struct ads1015_thresh_data thresh_data[ADS1015_CHANNELS];
+210a244
+> 	unsigned int *data_rate;
+216a251
+> };
+218,221c253,256
+< 	/*
+< 	 * Optional interrupt line: negative or zero if not declared 
+< 	 */
+< 	int irq;
+---
+> static bool ads1015_event_channel_enabled(struct ads1015_data *data)
+> {
+> 	return (data->event_channel != ADS1015_CHANNELS);
+> }
+223c258,261
+< 	s64 timestamp;
+---
+> static void ads1015_event_channel_enable(struct ads1015_data *data, int chan,
+> 					 int comp_mode)
+> {
+> 	WARN_ON(ads1015_event_channel_enabled(data));
+225,226c263,270
+< 	bool use_buffer;
+< };
+---
+> 	data->event_channel = chan;
+> 	data->comp_mode = comp_mode;
+> }
+> 
+> static void ads1015_event_channel_disable(struct ads1015_data *data, int chan)
+> {
+> 	data->event_channel = ADS1015_CHANNELS;
+> }
+230,231c274
+< 	switch (reg)
+< 	{
+---
+> 	switch (reg) {
+277,280c320
+< 	dev_dbg(dev, "power state=%d", on);
+< 
+< 	if (on)
+< 	{
+---
+> 	if (on) {
+284,286c324
+< 	}
+< 	else
+< 	{
+---
+> 	} else {
+294,330c332,333
+< static int ads1015_buffer_preenable(struct iio_dev *indio_dev)
+< {
+< 	// struct ads1015_data *data = iio_priv(indio_dev);
+< 	// struct device *dev = regmap_get_device(data->regmap);
+< 	// enable_irq(data->irq);
+< 
+< 	return ads1015_set_power_state(iio_priv(indio_dev), true);
+< }
+< 
+< static int ads1015_buffer_postdisable(struct iio_dev *indio_dev)
+< {
+< 	// struct ads1015_data *data = iio_priv(indio_dev);
+< 	// struct device *dev = regmap_get_device(data->regmap);
+< 	// disable_irq(data->irq);
+< 
+< 	return ads1015_set_power_state(iio_priv(indio_dev), false);
+< }
+< 
+< static const struct iio_buffer_setup_ops ads1015_buffer_setup_ops = {
+< 	/*
+< 	 * iio_triggered_buffer_postenable:
+< 	 * Generic function that simply attaches the pollfunc to the trigger.
+< 	 * Replace this to mess with hardware state before we attach the
+< 	 * trigger.
+< 	 */
+< 	.preenable = ads1015_buffer_preenable,
+< 	/*
+< 	 * iio_triggered_buffer_predisable:
+< 	 * Generic function that simple detaches the pollfunc from the trigger.
+< 	 * Replace this to put hardware state back again after the trigger is
+< 	 * detached but before userspace knows we have disabled the ring.
+< 	 */
+< 	.postdisable = ads1015_buffer_postdisable,
+< 	.validate_scan_mask = &iio_validate_scan_mask_onehot,
+< };
+< 
+< static int ads1015_get_adc_result(struct ads1015_data *data, int chan, int *val)
+---
+> static
+> int ads1015_get_adc_result(struct ads1015_data *data, int chan, int *val)
+345c348
+< 		   ADS1015_CFG_DR_MASK;
+---
+> 		ADS1015_CFG_DR_MASK;
+347c350,358
+< 		  dr << ADS1015_CFG_DR_SHIFT;
+---
+> 		dr << ADS1015_CFG_DR_SHIFT;
+> 
+> 	if (ads1015_event_channel_enabled(data)) {
+> 		mask |= ADS1015_CFG_COMP_QUE_MASK | ADS1015_CFG_COMP_MODE_MASK;
+> 		cfg |= data->thresh_data[chan].comp_queue <<
+> 				ADS1015_CFG_COMP_QUE_SHIFT |
+> 			data->comp_mode <<
+> 				ADS1015_CFG_COMP_MODE_SHIFT;
+> 	}
+350,351c361
+< 	if (old != cfg)
+< 	{
+---
+> 	if (old != cfg) {
+357,358c367
+< 	if (data->conv_invalid)
+< 	{
+---
+> 	if (data->conv_invalid) {
+369a379,409
+> static irqreturn_t ads1015_trigger_handler(int irq, void *p)
+> {
+> 	struct iio_poll_func *pf = p;
+> 	struct iio_dev *indio_dev = pf->indio_dev;
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	s16 buf[8]; /* 1x s16 ADC val + 3x s16 padding +  4x s16 timestamp */
+> 	int chan, ret, res;
+> 
+> 	memset(buf, 0, sizeof(buf));
+> 
+> 	mutex_lock(&data->lock);
+> 	chan = find_first_bit(indio_dev->active_scan_mask,
+> 			      indio_dev->masklength);
+> 	ret = ads1015_get_adc_result(data, chan, &res);
+> 	if (ret < 0) {
+> 		mutex_unlock(&data->lock);
+> 		goto err;
+> 	}
+> 
+> 	buf[0] = res;
+> 	mutex_unlock(&data->lock);
+> 
+> 	iio_push_to_buffers_with_timestamp(indio_dev, buf,
+> 					   iio_get_time_ns(indio_dev));
+> 
+> err:
+> 	iio_trigger_notify_done(indio_dev->trig);
+> 
+> 	return IRQ_HANDLED;
+> }
+> 
+371,372c411,412
+< 							 struct iio_chan_spec const *chan,
+< 							 int scale, int uscale)
+---
+> 			     struct iio_chan_spec const *chan,
+> 			     int scale, int uscale)
+375c415,416
+< 	int fullscale = div_s64((scale * 1000000LL + uscale) << (chan->scan_type.realbits - 1), 1000000);
+---
+> 	int fullscale = div_s64((scale * 1000000LL + uscale) <<
+> 				(chan->scan_type.realbits - 1), 1000000);
+377,380c418,419
+< 	for (i = 0; i < ARRAY_SIZE(ads1015_fullscale_range); i++)
+< 	{
+< 		if (ads1015_fullscale_range[i] == fullscale)
+< 		{
+---
+> 	for (i = 0; i < ARRAY_SIZE(ads1015_fullscale_range); i++) {
+> 		if (ads1015_fullscale_range[i] == fullscale) {
+393,396c432,433
+< 	for (i = 0; i < ARRAY_SIZE(ads1015_data_rate); i++)
+< 	{
+< 		if (data->data_rate[i] == rate)
+< 		{
+---
+> 	for (i = 0; i < ARRAY_SIZE(ads1015_data_rate); i++) {
+> 		if (data->data_rate[i] == rate) {
+406,407c443,444
+< 							struct iio_chan_spec const *chan, int *val,
+< 							int *val2, long mask)
+---
+> 			    struct iio_chan_spec const *chan, int *val,
+> 			    int *val2, long mask)
+413,426c450,452
+< 	switch (mask)
+< 	{
+< 	case IIO_CHAN_INFO_RAW:
+< 	{
+< 		int shift;
+< 
+< 		// cannot read directly if buffered capture enabled.
+< 		if (iio_buffer_enabled(indio_dev))
+< 		{
+< 			ret = -EAGAIN;
+< 			break;
+< 		}
+< 
+< 		shift = chan->scan_type.shift;
+---
+> 	switch (mask) {
+> 	case IIO_CHAN_INFO_RAW: {
+> 		int shift = chan->scan_type.shift;
+431a458,463
+> 		if (ads1015_event_channel_enabled(data) &&
+> 				data->event_channel != chan->address) {
+> 			ret = -EBUSY;
+> 			goto release_direct;
+> 		}
+> 
+437,438c469
+< 		if (ret < 0)
+< 		{
+---
+> 		if (ret < 0) {
+450c481
+< 	release_direct:
+---
+> release_direct:
+475,476c506,507
+< 							 struct iio_chan_spec const *chan, int val,
+< 							 int val2, long mask)
+---
+> 			     struct iio_chan_spec const *chan, int val,
+> 			     int val2, long mask)
+482,483c513
+< 	switch (mask)
+< 	{
+---
+> 	switch (mask) {
+498a529,792
+> static int ads1015_read_event(struct iio_dev *indio_dev,
+> 	const struct iio_chan_spec *chan, enum iio_event_type type,
+> 	enum iio_event_direction dir, enum iio_event_info info, int *val,
+> 	int *val2)
+> {
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	int ret;
+> 	unsigned int comp_queue;
+> 	int period;
+> 	int dr;
+> 
+> 	mutex_lock(&data->lock);
+> 
+> 	switch (info) {
+> 	case IIO_EV_INFO_VALUE:
+> 		*val = (dir == IIO_EV_DIR_RISING) ?
+> 			data->thresh_data[chan->address].high_thresh :
+> 			data->thresh_data[chan->address].low_thresh;
+> 		ret = IIO_VAL_INT;
+> 		break;
+> 	case IIO_EV_INFO_PERIOD:
+> 		dr = data->channel_data[chan->address].data_rate;
+> 		comp_queue = data->thresh_data[chan->address].comp_queue;
+> 		period = ads1015_comp_queue[comp_queue] *
+> 			USEC_PER_SEC / data->data_rate[dr];
+> 
+> 		*val = period / USEC_PER_SEC;
+> 		*val2 = period % USEC_PER_SEC;
+> 		ret = IIO_VAL_INT_PLUS_MICRO;
+> 		break;
+> 	default:
+> 		ret = -EINVAL;
+> 		break;
+> 	}
+> 
+> 	mutex_unlock(&data->lock);
+> 
+> 	return ret;
+> }
+> 
+> static int ads1015_write_event(struct iio_dev *indio_dev,
+> 	const struct iio_chan_spec *chan, enum iio_event_type type,
+> 	enum iio_event_direction dir, enum iio_event_info info, int val,
+> 	int val2)
+> {
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	int realbits = chan->scan_type.realbits;
+> 	int ret = 0;
+> 	long long period;
+> 	int i;
+> 	int dr;
+> 
+> 	mutex_lock(&data->lock);
+> 
+> 	switch (info) {
+> 	case IIO_EV_INFO_VALUE:
+> 		if (val >= 1 << (realbits - 1) || val < -1 << (realbits - 1)) {
+> 			ret = -EINVAL;
+> 			break;
+> 		}
+> 		if (dir == IIO_EV_DIR_RISING)
+> 			data->thresh_data[chan->address].high_thresh = val;
+> 		else
+> 			data->thresh_data[chan->address].low_thresh = val;
+> 		break;
+> 	case IIO_EV_INFO_PERIOD:
+> 		dr = data->channel_data[chan->address].data_rate;
+> 		period = val * USEC_PER_SEC + val2;
+> 
+> 		for (i = 0; i < ARRAY_SIZE(ads1015_comp_queue) - 1; i++) {
+> 			if (period <= ads1015_comp_queue[i] *
+> 					USEC_PER_SEC / data->data_rate[dr])
+> 				break;
+> 		}
+> 		data->thresh_data[chan->address].comp_queue = i;
+> 		break;
+> 	default:
+> 		ret = -EINVAL;
+> 		break;
+> 	}
+> 
+> 	mutex_unlock(&data->lock);
+> 
+> 	return ret;
+> }
+> 
+> static int ads1015_read_event_config(struct iio_dev *indio_dev,
+> 	const struct iio_chan_spec *chan, enum iio_event_type type,
+> 	enum iio_event_direction dir)
+> {
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	int ret = 0;
+> 
+> 	mutex_lock(&data->lock);
+> 	if (data->event_channel == chan->address) {
+> 		switch (dir) {
+> 		case IIO_EV_DIR_RISING:
+> 			ret = 1;
+> 			break;
+> 		case IIO_EV_DIR_EITHER:
+> 			ret = (data->comp_mode == ADS1015_CFG_COMP_MODE_WINDOW);
+> 			break;
+> 		default:
+> 			ret = -EINVAL;
+> 			break;
+> 		}
+> 	}
+> 	mutex_unlock(&data->lock);
+> 
+> 	return ret;
+> }
+> 
+> static int ads1015_enable_event_config(struct ads1015_data *data,
+> 	const struct iio_chan_spec *chan, int comp_mode)
+> {
+> 	int low_thresh = data->thresh_data[chan->address].low_thresh;
+> 	int high_thresh = data->thresh_data[chan->address].high_thresh;
+> 	int ret;
+> 	unsigned int val;
+> 
+> 	if (ads1015_event_channel_enabled(data)) {
+> 		if (data->event_channel != chan->address ||
+> 			(data->comp_mode == ADS1015_CFG_COMP_MODE_TRAD &&
+> 				comp_mode == ADS1015_CFG_COMP_MODE_WINDOW))
+> 			return -EBUSY;
+> 
+> 		return 0;
+> 	}
+> 
+> 	if (comp_mode == ADS1015_CFG_COMP_MODE_TRAD) {
+> 		low_thresh = max(-1 << (chan->scan_type.realbits - 1),
+> 				high_thresh - 1);
+> 	}
+> 	ret = regmap_write(data->regmap, ADS1015_LO_THRESH_REG,
+> 			low_thresh << chan->scan_type.shift);
+> 	if (ret)
+> 		return ret;
+> 
+> 	ret = regmap_write(data->regmap, ADS1015_HI_THRESH_REG,
+> 			high_thresh << chan->scan_type.shift);
+> 	if (ret)
+> 		return ret;
+> 
+> 	ret = ads1015_set_power_state(data, true);
+> 	if (ret < 0)
+> 		return ret;
+> 
+> 	ads1015_event_channel_enable(data, chan->address, comp_mode);
+> 
+> 	ret = ads1015_get_adc_result(data, chan->address, &val);
+> 	if (ret) {
+> 		ads1015_event_channel_disable(data, chan->address);
+> 		ads1015_set_power_state(data, false);
+> 	}
+> 
+> 	return ret;
+> }
+> 
+> static int ads1015_disable_event_config(struct ads1015_data *data,
+> 	const struct iio_chan_spec *chan, int comp_mode)
+> {
+> 	int ret;
+> 
+> 	if (!ads1015_event_channel_enabled(data))
+> 		return 0;
+> 
+> 	if (data->event_channel != chan->address)
+> 		return 0;
+> 
+> 	if (data->comp_mode == ADS1015_CFG_COMP_MODE_TRAD &&
+> 			comp_mode == ADS1015_CFG_COMP_MODE_WINDOW)
+> 		return 0;
+> 
+> 	ret = regmap_update_bits(data->regmap, ADS1015_CFG_REG,
+> 				ADS1015_CFG_COMP_QUE_MASK,
+> 				ADS1015_CFG_COMP_DISABLE <<
+> 					ADS1015_CFG_COMP_QUE_SHIFT);
+> 	if (ret)
+> 		return ret;
+> 
+> 	ads1015_event_channel_disable(data, chan->address);
+> 
+> 	return ads1015_set_power_state(data, false);
+> }
+> 
+> static int ads1015_write_event_config(struct iio_dev *indio_dev,
+> 	const struct iio_chan_spec *chan, enum iio_event_type type,
+> 	enum iio_event_direction dir, int state)
+> {
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	int ret;
+> 	int comp_mode = (dir == IIO_EV_DIR_EITHER) ?
+> 		ADS1015_CFG_COMP_MODE_WINDOW : ADS1015_CFG_COMP_MODE_TRAD;
+> 
+> 	mutex_lock(&data->lock);
+> 
+> 	/* Prevent from enabling both buffer and event at a time */
+> 	ret = iio_device_claim_direct_mode(indio_dev);
+> 	if (ret) {
+> 		mutex_unlock(&data->lock);
+> 		return ret;
+> 	}
+> 
+> 	if (state)
+> 		ret = ads1015_enable_event_config(data, chan, comp_mode);
+> 	else
+> 		ret = ads1015_disable_event_config(data, chan, comp_mode);
+> 
+> 	iio_device_release_direct_mode(indio_dev);
+> 	mutex_unlock(&data->lock);
+> 
+> 	return ret;
+> }
+> 
+> static irqreturn_t ads1015_event_handler(int irq, void *priv)
+> {
+> 	struct iio_dev *indio_dev = priv;
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 	int val;
+> 	int ret;
+> 
+> 	/* Clear the latched ALERT/RDY pin */
+> 	ret = regmap_read(data->regmap, ADS1015_CONV_REG, &val);
+> 	if (ret)
+> 		return IRQ_HANDLED;
+> 
+> 	if (ads1015_event_channel_enabled(data)) {
+> 		enum iio_event_direction dir;
+> 		u64 code;
+> 
+> 		dir = data->comp_mode == ADS1015_CFG_COMP_MODE_TRAD ?
+> 					IIO_EV_DIR_RISING : IIO_EV_DIR_EITHER;
+> 		code = IIO_UNMOD_EVENT_CODE(IIO_VOLTAGE, data->event_channel,
+> 					IIO_EV_TYPE_THRESH, dir);
+> 		iio_push_event(indio_dev, code, iio_get_time_ns(indio_dev));
+> 	}
+> 
+> 	return IRQ_HANDLED;
+> }
+> 
+> static int ads1015_buffer_preenable(struct iio_dev *indio_dev)
+> {
+> 	struct ads1015_data *data = iio_priv(indio_dev);
+> 
+> 	/* Prevent from enabling both buffer and event at a time */
+> 	if (ads1015_event_channel_enabled(data))
+> 		return -EBUSY;
+> 
+> 	return ads1015_set_power_state(iio_priv(indio_dev), true);
+> }
+> 
+> static int ads1015_buffer_postdisable(struct iio_dev *indio_dev)
+> {
+> 	return ads1015_set_power_state(iio_priv(indio_dev), false);
+> }
+> 
+> static const struct iio_buffer_setup_ops ads1015_buffer_setup_ops = {
+> 	.preenable	= ads1015_buffer_preenable,
+> 	.postenable	= iio_triggered_buffer_postenable,
+> 	.predisable	= iio_triggered_buffer_predisable,
+> 	.postdisable	= ads1015_buffer_postdisable,
+> 	.validate_scan_mask = &iio_validate_scan_mask_onehot,
+> };
+> 
+500c794
+< 							"3 2 1 0.5 0.25 0.125");
+---
+> 	"3 2 1 0.5 0.25 0.125");
+502c796
+< 							"0.1875 0.125 0.0625 0.03125 0.015625 0.007813");
+---
+> 	"0.1875 0.125 0.0625 0.03125 0.015625 0.007813");
+505c799
+< 							sampling_frequency_available, "128 250 490 920 1600 2400 3300");
+---
+> 	sampling_frequency_available, "128 250 490 920 1600 2400 3300");
+507c801
+< 							sampling_frequency_available, "8 16 32 64 128 250 475 860");
+---
+> 	sampling_frequency_available, "8 16 32 64 128 250 475 860");
+530,532c824,830
+< 	.read_raw = ads1015_read_raw,
+< 	.write_raw = ads1015_write_raw,
+< 	.attrs = &ads1015_attribute_group,
+---
+> 	.read_raw	= ads1015_read_raw,
+> 	.write_raw	= ads1015_write_raw,
+> 	.read_event_value = ads1015_read_event,
+> 	.write_event_value = ads1015_write_event,
+> 	.read_event_config = ads1015_read_event_config,
+> 	.write_event_config = ads1015_write_event_config,
+> 	.attrs          = &ads1015_attribute_group,
+536,538c834,840
+< 	.read_raw = ads1015_read_raw,
+< 	.write_raw = ads1015_write_raw,
+< 	.attrs = &ads1115_attribute_group,
+---
+> 	.read_raw	= ads1015_read_raw,
+> 	.write_raw	= ads1015_write_raw,
+> 	.read_event_value = ads1015_read_event,
+> 	.write_event_value = ads1015_write_event,
+> 	.read_event_config = ads1015_read_event_config,
+> 	.write_event_config = ads1015_write_event_config,
+> 	.attrs          = &ads1115_attribute_group,
+549c851
+< 		!of_get_next_child(client->dev.of_node, NULL))
+---
+> 	    !of_get_next_child(client->dev.of_node, NULL))
+552,553c854
+< 	for_each_child_of_node(client->dev.of_node, node)
+< 	{
+---
+> 	for_each_child_of_node(client->dev.of_node, node) {
+559,560c860
+< 		if (of_property_read_u32(node, "reg", &pval))
+< 		{
+---
+> 		if (of_property_read_u32(node, "reg", &pval)) {
+562c862
+< 					node);
+---
+> 				node);
+567,568c867
+< 		if (channel >= ADS1015_CHANNELS)
+< 		{
+---
+> 		if (channel >= ADS1015_CHANNELS) {
+570,571c869,870
+< 					"invalid channel index %d on %pOF\n",
+< 					channel, node);
+---
+> 				"invalid channel index %d on %pOF\n",
+> 				channel, node);
+575,576c874
+< 		if (!of_property_read_u32(node, "ti,gain", &pval))
+< 		{
+---
+> 		if (!of_property_read_u32(node, "ti,gain", &pval)) {
+578,579c876
+< 			if (pga > 6)
+< 			{
+---
+> 			if (pga > 6) {
+581c878
+< 						node);
+---
+> 					node);
+587,588c884
+< 		if (!of_property_read_u32(node, "ti,datarate", &pval))
+< 		{
+---
+> 		if (!of_property_read_u32(node, "ti,datarate", &pval)) {
+590,591c886
+< 			if (data_rate > 7)
+< 			{
+---
+> 			if (data_rate > 7) {
+593,594c888,889
+< 						"invalid data_rate on %pOF\n",
+< 						node);
+---
+> 					"invalid data_rate on %pOF\n",
+> 					node);
+602d896
+< 		dev_dbg(&client->dev, "channel=%d pga=%d data_rate=%d", channel, pga, data_rate);
+618,619c912
+< 	if (pdata)
+< 	{
+---
+> 	if (pdata) {
+621c914
+< 			   sizeof(data->channel_data));
+---
+> 		       sizeof(data->channel_data));
+630,631c923
+< 	for (k = 0; k < ADS1015_CHANNELS; ++k)
+< 	{
+---
+> 	for (k = 0; k < ADS1015_CHANNELS; ++k) {
+640,641c932,933
+< 							  ADS1015_CFG_MOD_MASK,
+< 							  mode << ADS1015_CFG_MOD_SHIFT);
+---
+> 				  ADS1015_CFG_MOD_MASK,
+> 				  mode << ADS1015_CFG_MOD_SHIFT);
+644,775c936,937
+< static int ads1015_set_conv_ready_pin(struct ads1015_data *data)
+< {
+< 	int ret;
+< 
+< 	ret = regmap_write(data->regmap, ADS1015_LO_THRESH_REG, 0);
+< 	if (ret)
+< 		return ret;
+< 
+< 	ret = regmap_write(data->regmap, ADS1015_HI_THRESH_REG, 0xFFFF);
+< 	if (ret)
+< 		return ret;
+< 
+< 	return regmap_update_bits(data->regmap, ADS1015_CFG_REG, ADS1015_CFG_COMP_QUE_MASK, 0);
+< }
+< 
+< static irqreturn_t __attribute__((optimize("O0"))) ads1015_irq_handler(int irq, void *private)
+< {
+< 	struct iio_dev *indio_dev = private;
+< 	struct ads1015_data *data = iio_priv(indio_dev);
+< 
+< 	data->timestamp = iio_get_time_ns(indio_dev);
+< 	return IRQ_WAKE_THREAD;
+< }
+< 
+< static irqreturn_t __attribute__((optimize("O0"))) ads1015_irq_handler_thread(int irq, void *private)
+< {
+< 	struct iio_dev *indio_dev = private;
+< 	struct ads1015_data *data = iio_priv(indio_dev);
+< 
+< 	struct device *dev = regmap_get_device(data->regmap);
+< 	s16 buf[8]; /* 1x s16 ADC val + 3x s16 padding +  4x s16 timestamp */
+< 	int ret, res, chan;
+< 
+< #ifdef ADS1015_SHOW_DELTA
+< 	s64 timestamp;
+< 	u32 tdelta;
+< #endif
+< 
+< 	/* return if buffer not anabled */
+< 	if (!iio_buffer_enabled(indio_dev))
+< 	{
+< 		dev_dbg_ratelimited(dev, "buffer not enabled");
+< 		data->use_buffer = false;
+< 		goto err;
+< 	}
+< 
+< 	memset(buf, 0, sizeof(buf));
+< 
+< 	mutex_lock(&data->lock);
+< 
+< 	if (data->use_buffer)
+< 	{
+< 		/* fast conversion*/
+< 		ret = regmap_read(data->regmap, ADS1015_CONV_REG, &res);
+< 		if (ret < 0)
+< 		{
+< 			dev_dbg_ratelimited(dev, "regmap_read ret=%d", ret);
+< 			mutex_unlock(&data->lock);
+< 			goto err;
+< 		}
+< 	}
+< 	else
+< 	{
+< 		/* conversion with config update */
+< 		chan = find_first_bit(indio_dev->active_scan_mask,
+< 							  indio_dev->masklength);
+< 		dev_dbg(dev, "config conversion chan=%d", chan);
+< 		ret = ads1015_get_adc_result(data, chan, &res);
+< 		if (ret < 0)
+< 		{
+< 			dev_dbg_ratelimited(dev, "ads1015_get_adc_result ret=%d", ret);
+< 			mutex_unlock(&data->lock);
+< 			goto err;
+< 		}
+< 	}
+< 
+< 	buf[0] = res;
+< 
+< 	mutex_unlock(&data->lock);
+< 
+< #ifdef ADS1015_SHOW_DELTA
+< 	timestamp = iio_get_time_ns(indio_dev);
+< #endif
+< 
+< 	ret = iio_push_to_buffers_with_timestamp(indio_dev, buf, data->timestamp);
+< 
+< #ifdef ADS1015_SHOW_DELTA
+< 	tdelta = (u32)(timestamp - data->timestamp) / 1000;
+< 	dev_dbg_ratelimited(dev, "iio_push_to_buffers ret=%d delta=%d", ret, tdelta);
+< #endif
+< 
+< 	data->use_buffer = true;
+< 
+< err:
+< 
+< 	return IRQ_HANDLED;
+< }
+< 
+< static int __attribute__((optimize("O0"))) ads1015_probe_irq(struct iio_dev *indio_dev)
+< {
+< 	struct ads1015_data *data = iio_priv(indio_dev);
+< 	struct device *dev = regmap_get_device(data->regmap);
+< 	unsigned long irq_type;
+< 	int ret;
+< 
+< 	irq_type = irqd_get_trigger_type(irq_get_irq_data(data->irq));
+< 
+< 	switch (irq_type)
+< 	{
+< 	case IRQF_TRIGGER_RISING:
+< 	case IRQF_TRIGGER_FALLING:
+< 		break;
+< 	default:
+< 		dev_info(dev, "mode %lx unsupported\n", irq_type);
+< 		return -EINVAL;
+< 	}
+< 
+< 	ret = devm_request_threaded_irq(dev, data->irq, &ads1015_irq_handler,
+< 									&ads1015_irq_handler_thread,
+< 									irq_type | IRQF_ONESHOT,
+< 									indio_dev->name,
+< 									indio_dev);
+< 	if (ret)
+< 	{
+< 		dev_err(dev, "failed to request trigger irq %d\n", data->irq);
+< 	}
+< 
+< 	return ret;
+< }
+< 
+< static int __attribute__((optimize("O0"))) ads1015_probe(struct i2c_client *client,
+< 														 const struct i2c_device_id *id)
+---
+> static int ads1015_probe(struct i2c_client *client,
+> 			 const struct i2c_device_id *id)
+778d939
+< 	struct iio_buffer *buffer;
+780d940
+< 	enum chip_ids chip;
+781a942,943
+> 	enum chip_ids chip;
+> 	int i;
+783d944
+< 	// allocate private data
+796,802c957
+< 	indio_dev->modes = (INDIO_BUFFER_SOFTWARE | INDIO_DIRECT_MODE);
+< 
+< 	/*
+< 	 * Tell the core what device type specific functions should
+< 	 * be run on either side of buffer capture enable / disable.
+< 	 */
+< 	indio_dev->setup_ops = &ads1015_buffer_setup_ops;
+---
+> 	indio_dev->modes = INDIO_DIRECT_MODE;
+808,810c963
+< 
+< 	switch (chip)
+< 	{
+---
+> 	switch (chip) {
+815c968
+< 		data->data_rate = (unsigned int *)&ads1015_data_rate;
+---
+> 		data->data_rate = (unsigned int *) &ads1015_data_rate;
+821c974
+< 		data->data_rate = (unsigned int *)&ads1115_data_rate;
+---
+> 		data->data_rate = (unsigned int *) &ads1115_data_rate;
+824a978,989
+> 	data->event_channel = ADS1015_CHANNELS;
+> 	/*
+> 	 * Set default lower and upper threshold to min and max value
+> 	 * respectively.
+> 	 */
+> 	for (i = 0; i < ADS1015_CHANNELS; i++) {
+> 		int realbits = indio_dev->channels[i].scan_type.realbits;
+> 
+> 		data->thresh_data[i].low_thresh = -1 << (realbits - 1);
+> 		data->thresh_data[i].high_thresh = (1 << (realbits - 1)) - 1;
+> 	}
+> 
+829,830c994
+< 	if (IS_ERR(data->regmap))
+< 	{
+---
+> 	if (IS_ERR(data->regmap)) {
+835,854c999,1003
+< 	data->use_buffer = false;
+< 
+< 	/* Allocate a buffer to use - here a kfifo */
+< 	buffer = devm_iio_kfifo_allocate(&client->dev);
+< 	if (!buffer)
+< 	{
+< 		dev_err(&client->dev, "iio kfifo buffer setup failed\n");
+< 		return -ENOMEM;
+< 	}
+< 
+< 	iio_device_attach_buffer(indio_dev, buffer);
+< 
+< 	/* set conversion ready pin */
+< 	ret = ads1015_set_conv_ready_pin(data);
+< 	if (ret)
+< 		return ret;
+< 
+< 	/* continuous conversion mode */
+< 	ret = ads1015_set_conv_mode(data, ADS1015_CONTINUOUS);
+< 	if (ret)
+---
+> 	ret = devm_iio_triggered_buffer_setup(&client->dev, indio_dev, NULL,
+> 					      ads1015_trigger_handler,
+> 					      &ads1015_buffer_setup_ops);
+> 	if (ret < 0) {
+> 		dev_err(&client->dev, "iio triggered buffer setup failed\n");
+855a1005
+> 	}
+857,861c1007,1027
+< 	if (client->irq > 0)
+< 	{
+< 		dev_dbg(&client->dev, "irq= %d", client->irq);
+< 
+< 		data->irq = client->irq;
+---
+> 	if (client->irq) {
+> 		unsigned long irq_trig =
+> 			irqd_get_trigger_type(irq_get_irq_data(client->irq));
+> 		unsigned int cfg_comp_mask = ADS1015_CFG_COMP_QUE_MASK |
+> 			ADS1015_CFG_COMP_LAT_MASK | ADS1015_CFG_COMP_POL_MASK;
+> 		unsigned int cfg_comp =
+> 			ADS1015_CFG_COMP_DISABLE << ADS1015_CFG_COMP_QUE_SHIFT |
+> 			1 << ADS1015_CFG_COMP_LAT_SHIFT;
+> 
+> 		switch (irq_trig) {
+> 		case IRQF_TRIGGER_LOW:
+> 			cfg_comp |= ADS1015_CFG_COMP_POL_LOW <<
+> 					ADS1015_CFG_COMP_POL_SHIFT;
+> 			break;
+> 		case IRQF_TRIGGER_HIGH:
+> 			cfg_comp |= ADS1015_CFG_COMP_POL_HIGH <<
+> 					ADS1015_CFG_COMP_POL_SHIFT;
+> 			break;
+> 		default:
+> 			return -EINVAL;
+> 		}
+863,868c1029,1032
+< 		/*
+< 		 * The device generates interrupts as long as it is powered up.
+< 		 * Some platforms might not allow the option to power it down so
+< 		 * disable the interrupt to avoid extra load on the system
+< 		 */
+< 		// disable_irq(client->irq);
+---
+> 		ret = regmap_update_bits(data->regmap, ADS1015_CFG_REG,
+> 					cfg_comp_mask, cfg_comp);
+> 		if (ret)
+> 			return ret;
+870c1034,1037
+< 		ret = ads1015_probe_irq(indio_dev);
+---
+> 		ret = devm_request_threaded_irq(&client->dev, client->irq,
+> 						NULL, ads1015_event_handler,
+> 						irq_trig | IRQF_ONESHOT,
+> 						client->name, indio_dev);
+874a1042,1045
+> 	ret = ads1015_set_conv_mode(data, ADS1015_CONTINUOUS);
+> 	if (ret)
+> 		return ret;
+> 
+880d1050
+< 
+886,887c1056
+< 	if (ret < 0)
+< 	{
+---
+> 	if (ret < 0) {
+935c1104,1105
+< 					   ads1015_runtime_resume, NULL)};
+---
+> 			   ads1015_runtime_resume, NULL)
+> };
+940c1110,1111
+< 	{}};
+---
+> 	{}
+> };
+944,948c1115,1124
+< 	{.compatible = "ti,ads1015",
+< 	 .data = (void *)ADS1015},
+< 	{.compatible = "ti,ads1115",
+< 	 .data = (void *)ADS1115},
+< 	{}};
+---
+> 	{
+> 		.compatible = "ti,ads1015",
+> 		.data = (void *)ADS1015
+> 	},
+> 	{
+> 		.compatible = "ti,ads1115",
+> 		.data = (void *)ADS1115
+> 	},
+> 	{}
+> };
+957,959c1133,1135
+< 	.probe = ads1015_probe,
+< 	.remove = ads1015_remove,
+< 	.id_table = ads1015_id,
+---
+> 	.probe		= ads1015_probe,
+> 	.remove		= ads1015_remove,
+> 	.id_table	= ads1015_id,
